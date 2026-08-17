@@ -1,0 +1,8 @@
+# compiled binary (built from source — see README)
+/mastodon-xmpp-auth
+/dist/
+*.exe
+
+# local env / secrets — never commit
+*.env
+db.env
