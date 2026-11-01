@@ -1,4 +1,4 @@
-module gitlab.gutocarvalho.net/open/mastodon-xmpp-auth
+module gitlab.gutocarvalho.net/open/bolha/mastodon-xmpp-auth
 
 go 1.26.5
 
