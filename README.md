@@ -14,6 +14,54 @@ Written in Go, it compiles to a single **static binary** with no runtime depende
 drops straight into the official `ejabberd/ecs` Docker image (or a bare-metal ejabberd) — no
 custom image, no interpreter, no shared libraries.
 
+## Testing and security
+
+This program decides who can log into the XMPP server with a Mastodon password, so it is tested against what would hurt: letting in an account that shouldn't (remote, unconfirmed, unapproved, disabled or suspended), writing anything, answering for another domain, and failing open. What is done today (2026-11-08):
+
+**Every pipeline.** GitLab CI ([`.gitlab-ci.yml`](.gitlab-ci.yml), plus the shared security stage from `open/gcn/ci-templates`, file `security.yml`). The test job runs on every pipeline; the security stage runs on every merge request and every push to `main`; the static binary is built, and kept as a job artifact, only from `main`.
+
+- Blocking (the pipeline fails):
+  - `go vet`, a `gofmt` check, and the full test suite against a real PostgreSQL 17;
+  - `govulncheck`: known vulnerabilities in Go code paths this program actually reaches (in the test job and in the security stage);
+  - `gitleaks`: secrets committed to the repository;
+  - `trivy`: critical vulnerabilities that have a fix, secrets and misconfigurations in the repository.
+- Informative (reported, not blocking): `semgrep`, `gosec`, `yamllint`, and `poutine` (security of the CI pipeline itself). The one `gosec` false positive is annotated in the code with the reason.
+
+**The test suite.** 3 tests (`go test -list`), small because the program is one file:
+
+- the protocol framing: requests are read and answers written in ejabberd's 2-byte length format;
+- writes and other domains are denied: `setpass`, `tryregister`, `removeuser`, `removeuser3`, unknown or malformed requests, and any request for a domain other than `XMPP_DOMAIN` answer "no" without touching the database;
+- the account filters, on PostgreSQL: one row per case that must be refused (remote, unconfirmed, unapproved, disabled, suspended), case-insensitive usernames, a wrong password, and a password containing `:`. It skips without `XMPP_TEST_DB_HOST`; CI sets it.
+
+**Reviews.** No penetration test or outside review has been run on this program yet.
+
+**Reporting a vulnerability.** Write to contato@gutocarvalho.net. Please don't open a public issue for it.
+
+## Architecture
+
+**Why it exists.** A community that runs Mastodon and an XMPP server would otherwise need a second set of accounts and passwords, and a second sign-up queue to moderate. With this backend the XMPP server has no accounts of its own: the people who can log in are exactly the instance's active local accounts, with the same password, and suspending an account on Mastodon also locks it out of XMPP.
+
+**In plain words.**
+
+1. ejabberd starts this program (`extauth_program`, a pool of processes) and sends it one request per line of its protocol: "is this password right for alice?", "does bob exist?";
+2. the program looks up the account in Mastodon's PostgreSQL with one read-only query, keeping only local, confirmed, approved, enabled and non-suspended accounts;
+3. it checks the password against the account's bcrypt hash and answers yes or no. Anything else (registration, password changes, errors) is a no.
+
+**Components.**
+
+```
+   XMPP client --SASL--> ejabberd --stdin/stdout ({packet, 2})--> mastodon-xmpp-auth
+                                                                       |
+                                                    one SELECT, 5 s timeout, at most 4 connections
+                                                                       v
+                                                           Mastodon PostgreSQL
+                                                           accounts + users (read-only user)
+```
+
+- Nothing is stored: no files, no cache, no HTTP. Each answer comes from the database at that moment, so a suspension or a password change on Mastodon takes effect on the next XMPP login.
+- Passwords are never logged; logs go to stderr, since stdout is the protocol.
+- XMPP data (rosters, messages, OMEMO keys) stays in ejabberd; this program only replaces the password check.
+
 ## How it works
 
 ejabberd talks to an external auth program over stdin/stdout using a simple length-prefixed
@@ -48,7 +96,7 @@ leak account existence.
 
 - ejabberd (tested with 26.x) configured for external authentication.
 - Network access from the ejabberd host to the Mastodon **PostgreSQL** database.
-- Go 1.22+ to build (only needed at build time).
+- Go 1.26.5 or newer to build (the version in `go.mod`; only needed at build time).
 - Mastodon schema compatible with v4.x (`accounts` + `users` tables, bcrypt `$2a$`/`$2b$`).
 
 ## Build
