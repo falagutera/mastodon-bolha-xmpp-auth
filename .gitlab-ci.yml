@@ -8,6 +8,12 @@ include:
     ref: main
 stages: [security, test, build]
 
+# the gosec image's Go is older than go.mod's 1.26.5 and pins GOTOOLCHAIN=local:
+# let it fetch the toolchain go.mod asks for.
+sec:gosec:
+  variables:
+    GOTOOLCHAIN: auto
+
 test:
   stage: test
   image: golang:1.26-alpine
