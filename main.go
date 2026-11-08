@@ -28,7 +28,7 @@ import (
 )
 
 func ctxTimeout() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 5*time.Second)
+	return context.WithTimeout(context.Background(), 5*time.Second) // #nosec G118 -- cancel is returned; the caller defers it
 }
 
 // A fixed bcrypt hash used to normalise timing when a user is not found, so the
