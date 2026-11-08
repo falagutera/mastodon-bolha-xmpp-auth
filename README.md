@@ -165,6 +165,8 @@ print(call("auth:alice:bolha.im:hunter2"))           # 1 if password matches
 
 (Export the `DB_*` and `XMPP_DOMAIN` variables first.)
 
+The automated tests are `go test ./...` (add a throwaway PostgreSQL for the account filters). Changing the code, by hand or with a coding agent: read [AGENTS.md](AGENTS.md) first. It has the commands and the rules a change must keep (read-only, which accounts may log in, one domain, fail closed).
+
 ## Notes
 
 - **OMEMO / PEP / MUC** and everything else are unaffected — this only replaces the password

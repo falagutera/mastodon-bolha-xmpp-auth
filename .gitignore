@@ -6,3 +6,5 @@
 # local env / secrets — never commit
 *.env
 db.env
+
+.claude/worktrees/

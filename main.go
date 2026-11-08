@@ -36,9 +36,9 @@ func ctxTimeout() (context.Context, context.CancelFunc) {
 const dummyHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
 
 var (
-	db        *sql.DB
+	db         *sql.DB
 	xmppDomain string
-	pepper    string
+	pepper     string
 )
 
 func env(k, def string) string {
