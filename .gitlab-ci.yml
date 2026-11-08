@@ -1,0 +1,44 @@
+# Shared security stage (gitleaks, govulncheck, trivy gate; the rest advisory), then vet, gofmt,
+# go test against a throwaway PostgreSQL (TestAccountFilters needs it) and govulncheck.
+# On the default branch it builds the static linux/amd64 binary and keeps it as a job artifact.
+# No image and no VERSION: releases are the commits (see AGENTS.md).
+include:
+  - project: 'open/gcn/ci-templates'
+    file: '/security.yml'
+    ref: main
+stages: [security, test, build]
+
+test:
+  stage: test
+  image: golang:1.26-alpine
+  services:
+    - name: postgres:17-alpine
+      alias: postgres
+  variables:
+    CGO_ENABLED: "0"
+    POSTGRES_PASSWORD: pg
+    POSTGRES_DB: xmpp_test
+    XMPP_TEST_DB_HOST: postgres
+    XMPP_TEST_DB_PASSWORD: pg
+  before_script:
+    - apk add --no-cache postgresql17-client
+    - until pg_isready -h postgres -U postgres; do sleep 1; done
+  script:
+    - go vet ./...
+    - test -z "$(gofmt -l .)"
+    - go test -p 1 ./...
+    - go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+    - "$(go env GOPATH)/bin/govulncheck ./..."
+
+build:
+  stage: build
+  image: golang:1.26-alpine
+  variables:
+    CGO_ENABLED: "0"
+  script:
+    - GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o mastodon-xmpp-auth .
+  artifacts:
+    paths: [mastodon-xmpp-auth]
+    expire_in: never
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

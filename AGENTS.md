@@ -35,6 +35,11 @@ real server is up.)
 Test variables: `XMPP_TEST_DB_HOST`, `_PORT` (5432), `_NAME` (xmpp_test), `_USER` (postgres),
 `_PASSWORD` (pg). Build the static binary with the command in the README.
 
+CI (`.gitlab-ci.yml`) runs the shared security stage (gitleaks, govulncheck and trivy gate the
+pipeline; gosec, semgrep and the linters only report), then `go vet`, gofmt, `go test -p 1` with a
+PostgreSQL service (so `TestAccountFilters` runs too) and govulncheck. On the default branch it
+builds the static linux/amd64 binary and keeps it as the `build` job artifact.
+
 ## Rules that must hold
 
 1. **Read-only.** `setpass`, `tryregister`, `removeuser`, `removeuser3` and unknown operations
@@ -64,8 +69,8 @@ Test variables: `XMPP_TEST_DB_HOST`, `_PORT` (5432), `_NAME` (xmpp_test), `_USER
 
 ## Releasing
 
-There is no `VERSION`, `CHANGELOG.md`, release notes page or CI here: releases are the commits, and
-the binary is built from source (README). If a version file is added later, follow the same rule as
+There is no `VERSION`, `CHANGELOG.md` or release notes page here: releases are the commits, and the
+binary is built from source (README) or taken from the CI `build` artifact of the default branch. If a version file is added later, follow the same rule as
 our other apps: fix = patch; new feature or option = minor; something an install must do (new
 setting or grant) = minor, said **in bold** at the top of the entry; breaking = major; docs or tests
 only = no bump; unreleased work under `## Unreleased`.

@@ -33,6 +33,7 @@ func ctxTimeout() (context.Context, context.CancelFunc) {
 
 // A fixed bcrypt hash used to normalise timing when a user is not found, so the
 // response time does not leak account existence. (hash of a random string)
+// nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- not a credential, only burns bcrypt time
 const dummyHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
 
 var (
