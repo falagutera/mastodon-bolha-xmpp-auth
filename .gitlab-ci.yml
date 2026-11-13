@@ -1,4 +1,4 @@
-# Shared security stage (gitleaks, govulncheck, trivy gate; the rest advisory), then vet, gofmt,
+# Shared security stage (betterleaks, govulncheck, trivy gate; the rest advisory), then vet, gofmt,
 # go test against a throwaway PostgreSQL (TestAccountFilters needs it) and govulncheck.
 # On the default branch it builds the static linux/amd64 binary and keeps it as a job artifact.
 # No image and no VERSION: releases are the commits (see AGENTS.md).
