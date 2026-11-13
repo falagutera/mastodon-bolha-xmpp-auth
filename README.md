@@ -14,6 +14,20 @@ Written in Go, it compiles to a single **static binary** with no runtime depende
 drops straight into the official `ejabberd/ecs` Docker image (or a bare-metal ejabberd) — no
 custom image, no interpreter, no shared libraries.
 
+## Contents
+
+- [Testing and security](#testing-and-security)
+- [Architecture](#architecture)
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Build](#build)
+- [Configuration](#configuration)
+- [Wiring it into ejabberd](#wiring-it-into-ejabberd)
+- [Service accounts (bots, bridges)](#service-accounts-bots-bridges)
+- [Testing without a client](#testing-without-a-client)
+- [Notes](#notes)
+- [License](#license)
+
 ## Testing and security
 
 This program decides who can log into the XMPP server with a Mastodon password, so it is tested against what would hurt: letting in an account that shouldn't (remote, unconfirmed, unapproved, disabled or suspended), writing anything, answering for another domain, and failing open. What is done today (2026-11-08):
